@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches-ignore: 
+    - master
+    - release
+
+# The CI job is a god job due to a security issue.
+# In order to transfer the restored files in-between jobs, I would have to upload and then download them.
+# That is a security breach because the uploaded files will be publicly available.
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    # Build
+    - name: Set up JDK 11
+      uses: actions/setup-java@v2
+      with:
+        distribution: 'adopt'
+        java-version: '11'
+        java-package: jdk
+        cache: 'gradle'
+        check-latest: true
+    - name: Cache Gradle packages
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+    - name: Build debug APK
+      run: ./gradlew buildDebug --info
+    # Unit Tests
+    - name: Run all unit tests
+      run: ./gradlew testDebug --info
+      
